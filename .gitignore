@@ -1,0 +1,13 @@
+bin
+bin_unix
+bin64
+data
+docs
+packages
+sauerbraten.app
+README.html
+rpg.bat
+sauerbraten.bat
+sauerbraten_unix
+server.bat
+server-init.cfg
