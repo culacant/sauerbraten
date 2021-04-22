@@ -65,7 +65,7 @@ struct fpsentity : extentity
     fpsentity() : triggerstate(TRIGGER_RESET), lasttrigger(0) {} 
 };
 
-enum { GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RIFLE, GUN_GL, GUN_PISTOL, GUN_FIREBALL, GUN_ICEBALL, GUN_SLIMEBALL, GUN_BITE, GUN_BARREL, NUMGUNS };
+enum { GUN_FIST = 0, GUN_SG, GUN_CG, GUN_RL, GUN_RIFLE, GUN_PISTOL, GUN_GL, GUN_FIREBALL, GUN_ICEBALL, GUN_SLIMEBALL, GUN_BITE, GUN_BARREL, NUMGUNS };
 enum { A_BLUE, A_GREEN, A_YELLOW };     // armour types... take 20/40/60 % off
 enum { M_NONE = 0, M_SEARCH, M_HOME, M_ATTACKING, M_PAIN, M_SLEEP, M_AIMING };  // monster states
 
@@ -333,6 +333,7 @@ static struct itemstat { int add, max, sound; const char *name; int icon, info; 
     {5,     15,    S_ITEMAMMO,   "RI", HICON_RIFLE, GUN_RIFLE},
     {10,    30,    S_ITEMAMMO,   "GL", HICON_GL, GUN_GL},
     {30,    120,   S_ITEMAMMO,   "PI", HICON_PISTOL, GUN_PISTOL},
+    {10,    30,    S_ITEMAMMO,   "GL", HICON_GL, GUN_GL},
     {25,    100,   S_ITEMHEALTH, "H",  HICON_HEALTH, -1},
     {100,   200,   S_ITEMHEALTH, "MH", HICON_HEALTH, 50},
     {100,   100,   S_ITEMARMOUR, "GA", HICON_GREEN_ARMOUR, A_GREEN},
@@ -345,20 +346,27 @@ static struct itemstat { int add, max, sound; const char *name; int icon, info; 
 #define EXP_SELFPUSH 2.5f
 #define EXP_DISTSCALE 1.5f
 
-static const struct guninfo { int sound, attackdelay, damage, spread, projspeed, kickamount, range, rays, hitpush, exprad, ttl; const char *name, *file; short part; } guns[NUMGUNS] =
+enum
 {
-    { S_PUNCH1,    250,  50,   0,   0,  0,   14,  1,  80,  0,    0, "fist",            "fist",   0 },
-    { S_SG,       1400,  10, 400,   0, 20, 1024, 20,  80,  0,    0, "shotgun",         "shotg",  0 },
-    { S_CG,        100,  30, 100,   0,  7, 1024,  1,  80,  0,    0, "chaingun",        "chaing", 0 },
-    { S_RLFIRE,    800, 120,   0, 320, 10, 1024,  1, 160, 40,    0, "rocketlauncher",  "rocket", 0 },
-    { S_RIFLE,    1500, 100,   0,   0, 30, 2048,  1,  80,  0,    0, "rifle",           "rifle",  0 },
-    { S_FLAUNCH,   600,  90,   0, 200, 10, 1024,  1, 250, 45, 1500, "grenadelauncher", "gl",     0 },
-    { S_PISTOL,    500,  35,  50,   0,  7, 1024,  1,  80,  0,    0, "pistol",          "pistol", 0 },
-    { S_FLAUNCH,   200,  20,   0, 200,  1, 1024,  1,  80, 40,    0, "fireball",        NULL,     PART_FIREBALL1 },
-    { S_ICEBALL,   200,  40,   0, 120,  1, 1024,  1,  80, 40,    0, "iceball",         NULL,     PART_FIREBALL2 },
-    { S_SLIMEBALL, 200,  30,   0, 640,  1, 1024,  1,  80, 40,    0, "slimeball",       NULL,     PART_FIREBALL3 },
-    { S_PIGR1,     250,  50,   0,   0,  1,   12,  1,  80,  0,    0, "bite",            NULL,     0 },
-    { -1,            0, 120,   0,   0,  0,    0,  1,  80, 40,    0, "barrel",          NULL,     0 }
+    DMG_NORMAL = 0,
+    DMG_PIERCE,
+    DMG_CNT,
+};
+
+static const struct guninfo { int sound, attackdelay, damage, damage_type, spread, projspeed, kickamount, range, rays, hitpush, exprad, ttl; const char *name, *file; short part; } guns[NUMGUNS] =
+{
+    { S_PUNCH1,    250,  50, DMG_NORMAL,   0,   0,  0,   14,  1,  80,  0,    0, "fist",            "fist",   0 },
+    { S_SG,       1400,  10, DMG_NORMAL, 400,   0, 20, 1024, 20,  80,  0,    0, "shotgun",         "shotg",  0 },
+    { S_CG,        100,  30, DMG_NORMAL, 100,   0,  7, 1024,  1,  80,  0,    0, "chaingun",        "chaing", 0 },
+    { S_RLFIRE,    800, 120, DMG_NORMAL,   0, 320, 10, 1024,  1, 160, 40,    0, "rocketlauncher",  "rocket", 0 },
+    { S_RIFLE,    1500,  3,  DMG_NORMAL,   0,   0, 30, 2048,  1,  80,  0,    0, "rifle",           "rifle",  0 },
+    { S_FLAUNCH,   600,  90, DMG_NORMAL,   0, 200, 10, 1024,  1, 250, 45, 1500, "grenadelauncher", "gl",     0 },
+    { S_PISTOL,    500,  3,  DMG_PIERCE,  50,   0,  7, 1024,  1,  80,  0,    0, "pistol",          "pistol", 0 },
+    { S_FLAUNCH,   200,  20, DMG_NORMAL,   0, 200,  1, 1024,  1,  80, 40,    0, "fireball",        NULL,     PART_FIREBALL1 },
+    { S_ICEBALL,   200,  40, DMG_NORMAL,   0, 120,  1, 1024,  1,  80, 40,    0, "iceball",         NULL,     PART_FIREBALL2 },
+    { S_SLIMEBALL, 200,  30, DMG_NORMAL,   0, 640,  1, 1024,  1,  80, 40,    0, "slimeball",       NULL,     PART_FIREBALL3 },
+    { S_PUNCH1,    250,  50, DMG_NORMAL,   0,   0,  1,   12,  1,  80,  0,    0, "bite",            NULL,     0 },
+    { -1,            0, 120, DMG_NORMAL,   0,   0,  0,    0,  1,  80, 40,    0, "barrel",          NULL,     0 }
 };
 
 #include "ai.h"
@@ -439,7 +447,7 @@ struct fpsstate
         maxhealth = 100;
         health = maxhealth;
         armour = 0;
-        armourtype = A_BLUE;
+        armourtype = A_GREEN;
         quadmillis = 0;
         gunselect = GUN_PISTOL;
         gunwait = 0;
@@ -501,13 +509,10 @@ struct fpsstate
         }
         else if(m_sp)
         {
-            if(m_dmsp) 
-            {
-                armourtype = A_BLUE;
-                armour = 25;
-            }
-            ammo[GUN_PISTOL] = 80;
-            ammo[GUN_GL] = 1;
+			armourtype = A_GREEN;
+			armour = 0;
+            ammo[GUN_PISTOL]    = 80;
+            ammo[GUN_RIFLE]     = 80;
         }
         else
         {

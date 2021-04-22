@@ -527,7 +527,7 @@ namespace game
             projectile &p = projs[i];
             p.offsetmillis = max(p.offsetmillis-time, 0);
             int qdam = guns[p.gun].damage*(p.owner->quadmillis ? 4 : 1);
-            if(p.owner->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
+//            if(p.owner->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
             vec dv;
             float dist = p.to.dist(p.o, dv); 
             dv.mul(time/max(dist*1000/p.speed, float(time)));
@@ -632,7 +632,7 @@ namespace game
             case GUN_ICEBALL:
             case GUN_SLIMEBALL:
                 pspeed = guns[gun].projspeed;
-                if(d->type==ENT_AI) pspeed /= 2;
+//                if(d->type==ENT_AI) pspeed /= 2;
                 newprojectile(from, to, (float)pspeed, local, id, d, gun);
                 break;
 
@@ -739,7 +739,7 @@ namespace game
     {
         int qdam = guns[d->gunselect].damage;
         if(d->quadmillis) qdam *= 4;
-        if(d->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
+//        if(d->type==ENT_AI) qdam /= MONSTERDAMAGEFACTOR;
         dynent *o;
         float dist;
         if(guns[d->gunselect].rays > 1)

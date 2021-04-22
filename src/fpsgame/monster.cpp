@@ -8,17 +8,20 @@ namespace game
     static vector<int> teleports;
 
     static const int TOTMFREQ = 14;
-    static const int NUMMONSTERTYPES = 9;
+    static const int NUMMONSTERTYPES = 2;
 
     struct monstertype      // see docs for how these values modify behaviour
     {
-        short gun, speed, health, freq, lag, rate, pain, loyalty, bscale, weight;
+        short gun, speed, health, armor[DMG_CNT], freq, lag, rate, pain, loyalty, bscale, weight;
         short painsound, diesound;
         const char *name, *mdlname, *vwepname;
     };
 
     static const monstertype monstertypes[NUMMONSTERTYPES] =
     {
+        { GUN_BITE,      20, 10, {5, 0},  7, 0,    1, 100, 6, 18, 160, S_PAINH, S_DEATHH, "a knight",    "monster/knight",     "monster/knight/vwep"},
+        { GUN_BITE,      20, 10, {0, 5},  7, 0,    1, 100, 6, 18, 160, S_PAINH, S_DEATHH, "an ogro",     "ogro",               "ogro/vwep" },
+ /* // og list
         { GUN_FIREBALL,  15, 100, 3, 0,   100, 800, 1, 10,  90, S_PAINO, S_DIE1,   "an ogro",     "ogro",       "ogro/vwep"},
         { GUN_CG,        18,  70, 2, 70,   10, 400, 2, 10,  50, S_PAINR, S_DEATHR, "a rhino",     "monster/rhino",      NULL},
         { GUN_SG,        13, 120, 1, 100, 300, 400, 4, 14, 115, S_PAINE, S_DEATHE, "ratamahatta", "monster/rat",        "monster/rat/vwep"},
@@ -28,6 +31,7 @@ namespace game
         { GUN_ICEBALL,   11, 250, 1, 0,    10, 400, 6, 18, 160, S_PAINH, S_DEATHH, "a knight",    "monster/knight",     "monster/knight/vwep"},
         { GUN_SLIMEBALL, 15, 100, 1, 0,   200, 400, 2, 10,  60, S_PAIND, S_DEATHD, "a goblin",    "monster/goblin",     "monster/goblin/vwep"},
         { GUN_GL,        22,  50, 1, 0,   200, 400, 1, 10,  40, S_PAIND, S_DEATHD, "a spider",    "monster/spider",      NULL },
+*/
     };
 
     VAR(skill, 1, 3, 10);
@@ -48,6 +52,7 @@ namespace game
         int anger;                          // how many times already hit by fellow monster
         physent *stacked;
         vec stackpos;
+        int armor[DMG_CNT];
     
         monster(int _type, int _yaw, int _tag, int _state, int _trigger, int _move) :
             monsterstate(_state), tag(_tag),
@@ -79,6 +84,10 @@ namespace game
             maxspeed = (float)t.speed*4;
             health = t.health;
             armour = 0;
+            loopi(DMG_CNT)
+            {
+                armor[i] = t.armor[i];
+			}
             loopi(NUMGUNS) ammo[i] = 10000;
             pitch = 0;
             roll = 0;
@@ -231,21 +240,26 @@ namespace game
 
         void monsterpain(int damage, fpsent *d)
         {
-            if(d->type==ENT_AI)     // a monster hit us
+            if (d->type == ENT_AI)     // a monster hit us
             {
-                if(this!=d)            // guard for RL guys shooting themselves :)
+                if (this != d)            // guard for RL guys shooting themselves :)
                 {
                     anger++;     // don't attack straight away, first get angry
-                    int _anger = d->type==ENT_AI && mtype==((monster *)d)->mtype ? anger/2 : anger;
-                    if(_anger>=monstertypes[mtype].loyalty) enemy = d;     // monster infight if very angry
+                    int _anger = d->type == ENT_AI && mtype == ((monster*)d)->mtype ? anger / 2 : anger;
+                    if (_anger >= monstertypes[mtype].loyalty) enemy = d;     // monster infight if very angry
                 }
+                damage = 1;
             }
-            else if(d->type==ENT_PLAYER) // player hit us
+            else if (d->type == ENT_PLAYER) // player hit us
             {
                 anger = 0;
                 enemy = d;
                 monsterhurt = true;
                 monsterhurtpos = o;
+
+                damage -= this->armor[guns[d->gunselect].damage_type];
+                if (damage <= 0)
+                    damage = 1;
             }
             damageeffect(damage, this);
             if((health -= damage)<=0)
@@ -315,7 +329,7 @@ namespace game
         if(m_dmsp)
         {
             nextmonster = mtimestart = lastmillis+10000;
-            monstertotal = spawnremain = skill*10;
+            monstertotal = spawnremain = skill;
         }
         else if(m_classicsp)
         {
